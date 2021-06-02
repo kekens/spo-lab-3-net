@@ -13,23 +13,23 @@ void print_list(file_description_node *fd_node_head) {
     file_description_node *current = fd_node_head;
 
     int i = 0;
-    while (current->file_desc_next != NULL) {
+    while (current->file_desc_node_next != NULL) {
         i++;
-        printf("file %d: %s/%d/%s\n", i, current->file_desc_entry.name, current->file_desc_entry.size, current->file_desc_entry.hash);
-        current = current->file_desc_next;
+        printf("file %d: %s/%d/%s\n", i, current->file_desc_entry->name, current->file_desc_entry->size, current->file_desc_entry->hash);
+        current = current->file_desc_node_next;
     }
 
 }
 
-void push_fd(file_description_node **fd_node_current, file_description fd) {
+void push_fd(file_description_node **fd_node_current, file_description *fd) {
     (*fd_node_current)->file_desc_entry = fd;
-    (*fd_node_current)->file_desc_next = (file_description_node *) malloc(sizeof(file_description_node));
-    (*fd_node_current) = (*fd_node_current)->file_desc_next;
-    (*fd_node_current)->file_desc_next = NULL;
+    (*fd_node_current)->file_desc_node_next = (file_description_node *) malloc(sizeof(file_description_node));
+    (*fd_node_current) = (*fd_node_current)->file_desc_node_next;
+    (*fd_node_current)->file_desc_node_next = NULL;
 }
 
 void scan_all_directories(file_description_node *fd_node_head, char *root_path) {
-    fd_node_head->file_desc_next = NULL;
+    fd_node_head->file_desc_node_next = NULL;
 
     file_description_node *fd_node_current = fd_node_head;
 
@@ -61,9 +61,9 @@ void scan_dir(file_description_node **fd_node_current, char *path) {
             scan_dir(fd_node_current, path);
             path[len-1] = '\0';
         } else if (entry->d_type == DT_REG) {
-            file_description fd;
-            fd.name = calloc(1, 256);
-            strcpy(fd.name, name);
+            file_description *fd = calloc(1, sizeof(file_description));
+            fd->name = calloc(1, 256);
+            strcpy(fd->name, name);
 
             char filepath[256];
             strcpy(filepath, path);
@@ -74,8 +74,8 @@ void scan_dir(file_description_node **fd_node_current, char *path) {
 
             strcat(filepath, name);
 
-            fd.size = calculate_file_size(filepath);
-            fd.hash = calculate_file_hash(filepath);
+            fd->size = calculate_file_size(filepath);
+            fd->hash = calculate_file_hash(filepath);
             push_fd(fd_node_current, fd);
         } else {
         }
@@ -126,21 +126,21 @@ char* calculate_file_hash(char *path) {
     return hash;
 }
 
-file_description find_file_description(file_description_node *fd_list_head, char *search_file_desc) {
+file_description *find_file_description(file_description_node *fd_list_head, char *search_file_desc) {
     file_description_node *current_node = fd_list_head;
 
     int i = 0;
-    while (current_node->file_desc_next != NULL) {
+    while (current_node->file_desc_node_next != NULL) {
         char *current_file_desc = calloc(1, 1024);
 
-        file_description fd = current_node->file_desc_entry;
-        strcat(current_file_desc, fd.name);
+        file_description *fd = current_node->file_desc_entry;
+        strcat(current_file_desc, fd->name);
         strcat(current_file_desc, "/");
         char buf[30];
-        sprintf(buf, "%d", fd.size);
+        sprintf(buf, "%d", fd->size);
         strcat(current_file_desc, buf);
         strcat(current_file_desc, "/");
-        strcat(current_file_desc, fd.hash);
+        strcat(current_file_desc, fd->hash);
 
         if (!strcmp(current_file_desc, search_file_desc)) {
 
@@ -149,13 +149,8 @@ file_description find_file_description(file_description_node *fd_list_head, char
             return fd;
         }
 
-        current_node = current_node->file_desc_next;
+        current_node = current_node->file_desc_node_next;
     }
 
-    file_description fd_not_found;
-    fd_not_found.name = NULL;
-    fd_not_found.hash = NULL;
-    fd_not_found.size =0;
-
-    return fd_not_found;
+    return NULL;
 }

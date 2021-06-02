@@ -7,6 +7,11 @@
 
 #include "../application_context.h"
 
+typedef struct udp_answer {
+    int result;
+    int port;
+} udp_answer;
+
 void start_udp_listener(application_context *app_context);
 
 void search_other_servers(application_context *app_context, char *search_file_description, int port);

@@ -3,11 +3,13 @@
 //
 
 #include "udp.h"
+#include "tcp.h"
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "../file_controller/file_controller.h"
 
@@ -88,7 +90,7 @@ void start_udp_listener(application_context *app_context) {
 
     if (udp_port > 8888) {
         for (int i = 0; i < udp_port - 8888; i++) {
-            inform_new_instance(udp_port - 8888, i + 8888);
+            inform_new_instance(udp_port + 1 - 8888, i + 8888);
         }
     } else {
         app_context->instance_count = 1;
@@ -103,21 +105,37 @@ void start_udp_listener(application_context *app_context) {
         len = sizeof(foreign_address);
         n = recvfrom(sockfd, buf, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &foreign_address, &len);
 
-        file_description file_desc = find_file_description(app_context->list_fd_head, buf);
+        file_description *file_desc = find_file_description(app_context->list_fd_head, buf);
 
         if (strstr(buf, " instance")) {
             app_context->instance_count = buf[0] - '0';
         } else {
 
-            if (file_desc.name != NULL) {
+            if (file_desc != NULL) {
+                udp_answer udp_answer;
+                tcp_description *tcp_desc = calloc(1, sizeof(tcp_description));
+                pthread_t *tcp_listener_thread = malloc(sizeof(tcp_listener_thread));
+                tcp_server_thread_description *tcp_server_thread_description = calloc(1, sizeof(tcp_server_thread_description));
 
+                tcp_server_thread_description->app_context = app_context;
+                tcp_server_thread_description->file_desc = file_desc;
+                tcp_server_thread_description->tcp_description = tcp_desc;
 
-                sendto(sockfd,)
+                create_tcp_socket(tcp_desc);
+
+                udp_answer.port = tcp_desc->tcp_port;
+                udp_answer.result = 1;
+
+                pthread_create(tcp_listener_thread, NULL, (void *) start_tcp_listener, tcp_server_thread_description);
+
+                sendto(sockfd, &udp_answer, sizeof(udp_answer), MSG_CONFIRM,
+                       (const struct sockaddr *) &foreign_address, len);
+            } else {
+                printf("file desc not found\n");
             }
         }
 
         printf("\nbuf %s\n", buf);
-        printf("n %d\n", n);
 
     }
 
@@ -155,7 +173,7 @@ void search_other_servers(application_context *app_context, char *file_descripti
 
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-    server_address.sin_port = htons(9999);
+    server_address.sin_port = htons(port);
 
     sendto(sockfd, file_description_str, strlen(file_description_str), MSG_CONFIRM,
                (const struct sockaddr *) &server_address, sizeof(server_address));
@@ -169,7 +187,10 @@ void search_other_servers(application_context *app_context, char *file_descripti
         n = recvfrom(sockfd, buf, BUF_SIZE, MSG_WAITALL, (struct sockaddr *) &foreign_address, &len);
 
         printf("Response %d\n", n);
-        printf("Response %s\n", buf);
+
+        udp_answer *answer = (udp_answer *) buf;
+
+        printf("Response %d\n", answer->port);
 
         return;
     }

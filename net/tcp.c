@@ -9,7 +9,7 @@
 
 #define TCP_PORT 9999
 
-void start_tcp_listener(tcp_description *td) {
+void create_tcp_socket(tcp_description *td) {
     int sockfd;
     struct sockaddr_in server_address;
 
@@ -22,11 +22,21 @@ void start_tcp_listener(tcp_description *td) {
 
     int tcp_port = TCP_PORT;
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = htonl(INADDR_ANY);
-    address.sin_port = tcp_port;
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_port = tcp_port;
 
+    while (bind(sockfd, (const struct sockaddr*) &server_address, sizeof(server_address)) < 0) {
+        server_address.sin_port = htons(++tcp_port);
+        printf("\nport++\n");
+    }
 
+    td->tcp_port = tcp_port;
+    td->sockfd = sockfd;
+    td->address = server_address;
 
+}
+
+void start_tcp_listener(tcp_server_thread_description *tcp_server_thread_description) {
 
 }

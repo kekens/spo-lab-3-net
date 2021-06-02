@@ -16,17 +16,17 @@ typedef struct file_description {
 } file_description;
 
 struct file_description_node {
-    file_description file_desc_entry;
-    file_description_node *file_desc_next;
+    file_description *file_desc_entry;
+    file_description_node *file_desc_node_next;
 };
 
-void push_fd(file_description_node **fd_node_current, file_description fd);
+void push_fd(file_description_node **fd_node_current, file_description *fd);
 void print_list(file_description_node *fd_node_head);
 
 void scan_all_directories(file_description_node *fd_node_head, char *root_path);
 void scan_dir(file_description_node **fd_node_current, char *path);
 int calculate_file_size(char *path);
 char* calculate_file_hash(char *path);
-file_description find_file_description(file_description_node *fd_list_head, char *search_file_desc);
+file_description* find_file_description(file_description_node *fd_list_head, char *search_file_desc);
 
 #endif //LR3_NET_FILE_CONTROLLER_H
