@@ -103,7 +103,7 @@ void start_udp_listener(application_context *app_context) {
         memset(buf, 0, BUF_SIZE);
 
         len = sizeof(foreign_address);
-        n = recvfrom(sockfd, buf, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &foreign_address, &len);
+        n = recvfrom(sockfd, buf, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &foreign_address, (socklen_t *) &len);
 
         file_description *file_desc = find_file_description(app_context->list_fd_head, buf);
 

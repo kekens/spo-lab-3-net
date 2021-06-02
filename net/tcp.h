@@ -12,7 +12,8 @@
 typedef struct tcp_description {
     int tcp_port;
     int sockfd;
-    struct sockaddr_in address;
+    struct sockaddr_in server_address;
+    struct sockaddr_in client_address;
 } tcp_description;
 
 typedef struct tcp_server_thread_description {
