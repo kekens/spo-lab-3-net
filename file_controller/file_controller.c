@@ -4,8 +4,7 @@
 #include "file_controller.h"
 #include "dirent.h"
 #include "sys/types.h"
-#include "string.h"
-#include "stddef.h"
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <openssl/md5.h>
@@ -16,7 +15,7 @@ void print_list(file_description_node *fd_node_head) {
     int i = 0;
     while (current->file_desc_next != NULL) {
         i++;
-        printf("file %d: %s / %d / %s\n", i, current->file_desc_entry.name, current->file_desc_entry.size, current->file_desc_entry.hash);
+        printf("file %d: %s/%d/%s\n", i, current->file_desc_entry.name, current->file_desc_entry.size, current->file_desc_entry.hash);
         current = current->file_desc_next;
     }
 
@@ -125,4 +124,38 @@ char* calculate_file_hash(char *path) {
     free(buf);
 
     return hash;
+}
+
+file_description find_file_description(file_description_node *fd_list_head, char *search_file_desc) {
+    file_description_node *current_node = fd_list_head;
+
+    int i = 0;
+    while (current_node->file_desc_next != NULL) {
+        char *current_file_desc = calloc(1, 1024);
+
+        file_description fd = current_node->file_desc_entry;
+        strcat(current_file_desc, fd.name);
+        strcat(current_file_desc, "/");
+        char buf[30];
+        sprintf(buf, "%d", fd.size);
+        strcat(current_file_desc, buf);
+        strcat(current_file_desc, "/");
+        strcat(current_file_desc, fd.hash);
+
+        if (!strcmp(current_file_desc, search_file_desc)) {
+
+            free(current_file_desc);
+
+            return fd;
+        }
+
+        current_node = current_node->file_desc_next;
+    }
+
+    file_description fd_not_found;
+    fd_not_found.name = NULL;
+    fd_not_found.hash = NULL;
+    fd_not_found.size =0;
+
+    return fd_not_found;
 }
