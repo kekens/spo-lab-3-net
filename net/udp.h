@@ -8,8 +8,9 @@
 #include "../application_context.h"
 
 typedef struct udp_answer {
-    int result;
+    int success_result;
     int port;
+    file_description *file_desc;
 } udp_answer;
 
 void start_udp_listener(application_context *app_context);

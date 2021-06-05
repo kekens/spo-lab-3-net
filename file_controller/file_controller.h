@@ -20,6 +20,7 @@ struct file_description_node {
     file_description_node *file_desc_node_next;
 };
 
+void push_fd_by_head(file_description_node *list_fd_head, file_description *fd);
 void push_fd(file_description_node **fd_node_current, file_description *fd);
 void print_list(file_description_node *fd_node_head);
 

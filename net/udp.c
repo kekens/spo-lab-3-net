@@ -112,31 +112,29 @@ void start_udp_listener(application_context *app_context) {
         } else {
 
             if (file_desc != NULL) {
-                udp_answer udp_answer;
+                udp_answer udp_answ;
                 tcp_description *tcp_desc = calloc(1, sizeof(tcp_description));
-                pthread_t *tcp_listener_thread = malloc(sizeof(tcp_listener_thread));
+                pthread_t *tcp_server_thread = malloc(sizeof(pthread_t));
                 tcp_server_thread_description *tcp_server_thread_description = calloc(1, sizeof(tcp_server_thread_description));
+
+                create_tcp_socket(tcp_desc);
 
                 tcp_server_thread_description->app_context = app_context;
                 tcp_server_thread_description->file_desc = file_desc;
                 tcp_server_thread_description->tcp_description = tcp_desc;
 
-                create_tcp_socket(tcp_desc);
+                udp_answ.port = tcp_desc->tcp_port;
+                udp_answ.success_result = 1;
+                udp_answ.file_desc = file_desc;
 
-                udp_answer.port = tcp_desc->tcp_port;
-                udp_answer.result = 1;
+                pthread_create(tcp_server_thread, NULL, (void *) start_tcp_server, tcp_server_thread_description);
 
-                pthread_create(tcp_listener_thread, NULL, (void *) start_tcp_listener, tcp_server_thread_description);
-
-                sendto(sockfd, &udp_answer, sizeof(udp_answer), MSG_CONFIRM,
+                sendto(sockfd, &udp_answ, sizeof(udp_answ), MSG_CONFIRM,
                        (const struct sockaddr *) &foreign_address, len);
             } else {
                 printf("file desc not found\n");
             }
         }
-
-        printf("\nbuf %s\n", buf);
-
     }
 
 }
@@ -178,21 +176,23 @@ void search_other_servers(application_context *app_context, char *file_descripti
     sendto(sockfd, file_description_str, strlen(file_description_str), MSG_CONFIRM,
                (const struct sockaddr *) &server_address, sizeof(server_address));
 
-    while (1) {
-        char *buf = calloc(1, BUF_SIZE);
-        int n, len;
+    char *buf = calloc(1, BUF_SIZE);
+    int n, len;
+    len = sizeof(foreign_address);
+    n = recvfrom(sockfd, buf, BUF_SIZE, MSG_WAITALL, (struct sockaddr *) &foreign_address, &len);
+    udp_answer *answer = (udp_answer *) buf;
+    printf("Response port %d\n\n", answer->port);
 
-        len = sizeof(foreign_address);
-
-        n = recvfrom(sockfd, buf, BUF_SIZE, MSG_WAITALL, (struct sockaddr *) &foreign_address, &len);
-
-        printf("Response %d\n", n);
-
-        udp_answer *answer = (udp_answer *) buf;
-
-        printf("Response %d\n", answer->port);
-
-        return;
+    if (answer->success_result) {
+        pthread_t *tcp_client_thread = (pthread_t *) malloc(sizeof(pthread_t));
+        tcp_client_thread_description *tcp_client_td = malloc(sizeof(tcp_client_thread_description));
+        tcp_client_td->app_context = app_context;
+        tcp_client_td->file_desc = answer->file_desc;
+        tcp_client_td->port = answer->port;
+        tcp_client_td->address = foreign_address.sin_addr.s_addr;
+        pthread_create(tcp_client_thread, NULL, (void *) start_tcp_client, tcp_client_td);
     }
+
+    free(buf);
 
 }

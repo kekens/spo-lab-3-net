@@ -28,6 +28,16 @@ void push_fd(file_description_node **fd_node_current, file_description *fd) {
     (*fd_node_current)->file_desc_node_next = NULL;
 }
 
+void push_fd_by_head(file_description_node *list_fd_head, file_description *fd) {
+    file_description_node *current = list_fd_head;
+
+    while (current->file_desc_node_next != NULL) {
+        current = current->file_desc_node_next;
+    }
+
+    push_fd(&current, fd);
+}
+
 void scan_all_directories(file_description_node *fd_node_head, char *root_path) {
     fd_node_head->file_desc_node_next = NULL;
 
