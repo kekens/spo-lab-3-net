@@ -11,6 +11,7 @@ typedef struct application_context {
     file_description_node *list_fd_head;
     int instance_count;
     int exit_code;
+    char *root_path;
 } application_context;
 
 #endif //LR3_NET_APPLICATION_CONTEXT_H

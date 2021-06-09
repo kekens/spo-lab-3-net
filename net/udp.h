@@ -10,7 +10,7 @@
 typedef struct udp_answer {
     int success_result;
     int port;
-    file_description *file_desc;
+    file_description_send file_desc_send;
 } udp_answer;
 
 void start_udp_listener(application_context *app_context);

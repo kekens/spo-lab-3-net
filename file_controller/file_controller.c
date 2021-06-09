@@ -44,6 +44,7 @@ void scan_all_directories(file_description_node *fd_node_head, char *root_path) 
     file_description_node *fd_node_current = fd_node_head;
 
     scan_dir(&fd_node_current, root_path);
+
 }
 
 void scan_dir(file_description_node **fd_node_current, char *path) {
@@ -69,10 +70,12 @@ void scan_dir(file_description_node **fd_node_current, char *path) {
 
             strcat(path, name);
             scan_dir(fd_node_current, path);
+            printf("PATH %s\n",path);
             path[len-1] = '\0';
         } else if (entry->d_type == DT_REG) {
             file_description *fd = calloc(1, sizeof(file_description));
             fd->name = calloc(1, 256);
+            fd->path = calloc(1, 512);
             strcpy(fd->name, name);
 
             char filepath[256];
@@ -86,8 +89,8 @@ void scan_dir(file_description_node **fd_node_current, char *path) {
 
             fd->size = calculate_file_size(filepath);
             fd->hash = calculate_file_hash(filepath);
+            strcpy(fd->path, filepath);
             push_fd(fd_node_current, fd);
-        } else {
         }
     }
     closedir(dir);

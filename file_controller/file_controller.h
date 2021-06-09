@@ -13,7 +13,15 @@ typedef struct file_description {
     char *name;
     int size;
     char *hash;
+    char *path;
 } file_description;
+
+typedef struct file_description_send {
+    char name[256];
+    char hash[512];
+    int size;
+    char path[512];
+} file_description_send;
 
 struct file_description_node {
     file_description *file_desc_entry;

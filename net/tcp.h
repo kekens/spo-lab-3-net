@@ -24,7 +24,7 @@ typedef struct tcp_server_thread_description {
 
 typedef struct tcp_client_thread_description {
     application_context *app_context;
-    file_description *file_desc;
+    file_description_send file_desc_send;
     int port;
     int address;
 } tcp_client_thread_description;

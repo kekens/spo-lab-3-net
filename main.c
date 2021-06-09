@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
         file_description_node *list_fd_head = malloc(sizeof(file_description_node));
         app_context->list_fd_head = list_fd_head;
         app_context->exit_code = 0;
+        app_context->root_path = argv[1];
         scan_all_directories(list_fd_head, argv[1]);
         print_list(list_fd_head);
 
