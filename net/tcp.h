@@ -29,6 +29,11 @@ typedef struct tcp_client_thread_description {
     int address;
 } tcp_client_thread_description;
 
+typedef struct tcp_server_file_answer {
+    int file_part[4096];
+    int file_part_len;
+} tcp_server_file_answer;
+
 void create_tcp_socket(tcp_description *td);
 
 void start_tcp_server(tcp_server_thread_description *tcp_server_thread_description);

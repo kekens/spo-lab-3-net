@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
             printf("enter command: ");
             scanf("%s", cmd);
             if (strcmp(cmd, "send") == 0) {
-                search_other_servers(app_context, "dbinfo.sql/37/bf6a0713edc66cc2dabce97aaee06bf8", 8888);
+                search_other_servers(app_context, "SUBD_LR1_Bobryakov_Kolokolov_P33122.pdf/103686/ee762d60ba0c9ef3ffc204ede187fd72", 8888);
             } else if (strcmp(cmd, "exit") == 0) {
                 app_context->exit_code = 1;
                 break;

@@ -128,7 +128,7 @@ void start_udp_listener(application_context *app_context) {
                 strcpy(udp_answ.file_desc_send.name, fd->name);
                 strcpy(udp_answ.file_desc_send.hash, fd->hash);
                 strcpy(udp_answ.file_desc_send.path, fd->path);
-                udp_answ.file_desc_send.size = 4;
+                udp_answ.file_desc_send.size = fd->size;
 
                 printf("%d\n",udp_answ.file_desc_send.size);
                 printf("name %s\n",udp_answ.file_desc_send.name);

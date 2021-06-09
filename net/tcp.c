@@ -66,19 +66,27 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
     printf("Accepted on TCP\n");
 
     printf("Uploading file:\n");
+    printf("server file path %s\n", fd->path);
 
     char cmd[3];
     int file = open(fd->path, O_RDONLY);
     int offset = 0;
 
+    strncpy(cmd, "xxx", 3);
+    tcp_server_file_answer file_answer;
+
     while (strncmp(cmd, "end", 3) != 0) {
         read(connfd, &cmd, sizeof(cmd));
-        if (strncmp(cmd, "dwn", sizeof(cmd))) {
+        if (strncmp(cmd, "dwn", sizeof(cmd)) == 0) {
             int size = 4096;
-            int file_part[4096];
-            pread(file, file_part, size, size * offset);
+            if (size*offset + 4096 > fd->size) {
+                size = fd->size - size * offset;
+            }
+            file_answer.file_part_len = size;
+            printf("size %d\n", size);
+            pread(file, file_answer.file_part, size, 4096 * offset);
             offset++;
-            write(connfd, &file_part, sizeof(file_part));
+            write(connfd, &file_answer, sizeof(file_answer));
         }
     }
 
@@ -122,31 +130,38 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
     }
 
 
-    char *file_name = calloc(1, 512);
+    char *file_path = calloc(1, 1024);
 
-    printf("server suck\n%s\n", fd->name);
+    printf("%s\n", app_context->root_path);
+    strcpy(file_path, app_context->root_path);
+    strcat(file_path, "/");
+    strcat(file_path, fd->name);
+    printf("final file %s\n", file_path);
 
-    strcat(file_name, fd->name);
-
-    int file = open(fd->path, O_CREAT | O_WRONLY, 0777);
+    int file = open(file_path, O_CREAT | O_WRONLY, 0777);
 
     if (file >= 0) {
+        printf("file created\n");
         push_fd_by_head(app_context->list_fd_head, fd);
 
         char command[3];
         strncpy(command, "dwn", 3);
-        int file_part[4096];
         int offset = 0;
+        int current_size = 0;
+        tcp_server_file_answer file_answer;
 
         while (1) {
-            int current_file_size = calculate_file_size(file_name);
+            int current_file_size = calculate_file_size(file_path);
             int current_percents = (int) ((((float) current_file_size) / fd->size) * 100);
 
-            printf("1\n");
-            if (current_file_size < fd->size) {
+            printf("1 %d %d\n", current_size, fd->size);
+            if (current_size < fd->size) {
                 write(sockfd, &command, sizeof(command));
-                read(sockfd, &file_part, sizeof(file_part));
-                pwrite(file, &file_part, 4096, offset * 0);
+                read(sockfd, &file_answer, sizeof(file_answer));
+                printf("2 %d\n", file_answer.file_part_len);
+                pwrite(file, &file_answer.file_part, file_answer.file_part_len, offset * 4096);
+                current_size += 4096;
+                offset++;
             } else {
                 strncpy(command, "end", 3);
                 write(sockfd, &command, sizeof(command));
