@@ -33,7 +33,6 @@ void create_tcp_socket(tcp_description *td) {
 
     while (bind(sockfd, (const struct sockaddr*) &server_address, sizeof(server_address)) < 0) {
         server_address.sin_port = htons(++tcp_port);
-        printf("\nport++\n");
     }
 
     td->tcp_port = tcp_port;
@@ -43,8 +42,6 @@ void create_tcp_socket(tcp_description *td) {
 
 void start_tcp_server(tcp_server_thread_description *tcp_server_thread_description) {
     int connfd, len;
-
-    printf(";;;\n");
 
     tcp_description *td = tcp_server_thread_description->tcp_description;
     file_description *fd = tcp_server_thread_description->file_desc;
@@ -63,10 +60,6 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
         return;
     }
 
-    printf("Accepted on TCP\n");
-
-    printf("Uploading file:\n");
-    printf("server file path %s\n", fd->path);
 
     char cmd[3];
     int file = open(fd->path, O_RDONLY);
@@ -83,14 +76,12 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
                 size = fd->size - size * offset;
             }
             file_answer.file_part_len = size;
-            printf("size %d\n", size);
             pread(file, file_answer.file_part, size, 4096 * offset);
             offset++;
             write(connfd, &file_answer, sizeof(file_answer));
         }
     }
 
-    printf("end\n");
 
 
 }
@@ -126,22 +117,19 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
         perror("\nconnection with server failed");
         return;
     } else {
-        printf("Connected to the server\n");
+//        printf("Connected to the server\n");
     }
 
 
     char *file_path = calloc(1, 1024);
 
-    printf("%s\n", app_context->root_path);
     strcpy(file_path, app_context->root_path);
     strcat(file_path, "/");
     strcat(file_path, fd->name);
-    printf("final file %s\n", file_path);
 
     int file = open(file_path, O_CREAT | O_WRONLY, 0777);
 
     if (file >= 0) {
-        printf("file created\n");
         push_fd_by_head(app_context->list_fd_head, fd);
 
         char command[3];
@@ -154,18 +142,15 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
             int current_file_size = calculate_file_size(file_path);
             int current_percents = (int) ((((float) current_file_size) / fd->size) * 100);
 
-            printf("1 %d %d\n", current_size, fd->size);
             if (current_size < fd->size) {
                 write(sockfd, &command, sizeof(command));
                 read(sockfd, &file_answer, sizeof(file_answer));
-                printf("2 %d\n", file_answer.file_part_len);
                 pwrite(file, &file_answer.file_part, file_answer.file_part_len, offset * 4096);
                 current_size += 4096;
                 offset++;
             } else {
                 strncpy(command, "end", 3);
                 write(sockfd, &command, sizeof(command));
-                printf("done\n");
                 return;
             }
 

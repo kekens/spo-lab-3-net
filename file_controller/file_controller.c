@@ -54,7 +54,7 @@ void scan_dir(file_description_node **fd_node_current, char *path) {
     size_t len = strlen(path);
 
     if (!(dir = opendir(path))) {
-        printf("Unable to open directory\n");
+//        printf("Unable to open directory\n");
         return;
     }
 
@@ -70,7 +70,6 @@ void scan_dir(file_description_node **fd_node_current, char *path) {
 
             strcat(path, name);
             scan_dir(fd_node_current, path);
-            printf("PATH %s\n",path);
             path[len-1] = '\0';
         } else if (entry->d_type == DT_REG) {
             file_description *fd = calloc(1, sizeof(file_description));
@@ -117,7 +116,7 @@ char* calculate_file_hash(char *path) {
     unsigned char data[1024];
 
     if (inFile == NULL) {
-        printf ("%s can't be opened.\n", path);
+//        printf ("%s can't be opened.\n", path);
         return 0;
     }
 
@@ -139,6 +138,8 @@ char* calculate_file_hash(char *path) {
     return hash;
 }
 
+
+
 file_description *find_file_description(file_description_node *fd_list_head, char *search_file_desc) {
     file_description_node *current_node = fd_list_head;
 
@@ -148,17 +149,16 @@ file_description *find_file_description(file_description_node *fd_list_head, cha
 
         file_description *fd = current_node->file_desc_entry;
         strcat(current_file_desc, fd->name);
-        strcat(current_file_desc, "/");
-        char buf[30];
-        sprintf(buf, "%d", fd->size);
-        strcat(current_file_desc, buf);
-        strcat(current_file_desc, "/");
-        strcat(current_file_desc, fd->hash);
+//        strcat(current_file_desc, "/");
+//        char buf[30];
+//        sprintf(buf, "%d", fd->size);
+//        strcat(current_file_desc, buf);
+//        strcat(current_file_desc, "/");
+//        strcat(current_file_desc, fd->hash);
 
         if (!strcmp(current_file_desc, search_file_desc)) {
 
             free(current_file_desc);
-
             return fd;
         }
 
