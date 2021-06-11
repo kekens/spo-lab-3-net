@@ -54,8 +54,8 @@ void scan_dir(file_description_node **fd_node_current, char *path) {
     size_t len = strlen(path);
 
     if (!(dir = opendir(path))) {
-//        printf("Unable to open directory\n");
-        return;
+        printf("Unable to open directory\n");
+        exit(0);
     }
 
     while ((entry = readdir(dir)) != NULL) {
@@ -149,12 +149,6 @@ file_description *find_file_description(file_description_node *fd_list_head, cha
 
         file_description *fd = current_node->file_desc_entry;
         strcat(current_file_desc, fd->name);
-//        strcat(current_file_desc, "/");
-//        char buf[30];
-//        sprintf(buf, "%d", fd->size);
-//        strcat(current_file_desc, buf);
-//        strcat(current_file_desc, "/");
-//        strcat(current_file_desc, fd->hash);
 
         if (!strcmp(current_file_desc, search_file_desc)) {
 

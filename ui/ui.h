@@ -7,6 +7,7 @@
 
 #include "termios.h"
 #include "../application_context.h"
+#include "esc.h"
 
 typedef struct command_result {
     char cmd[30];
@@ -35,6 +36,7 @@ void print_horizontal_line(char symbol[1], int count, int startX, int y);
 void print_vertical_line(char symbol[1], int count, int x, int startY);
 int get_pos(int *y, int *x);
 command_result process_command();
-void print_log(char *log_str);
+void print_log(char *log_str, int format);
+void clear_log();
 
 #endif //LR3_NET_UI_H

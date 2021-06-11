@@ -50,5 +50,7 @@
 #define set_cursor_column(column) printf(ESC "[%dG", column);
 #define clear_string_until_end() printf(ESC "[0K");
 #define clear_symbols(count) printf(ESC "[%dX", count);
+#define save_cursor() printf(ESC "[s");
+#define restore_cursor() printf(ESC "[u");
 
 #endif //LR3_NET_ESC_H

@@ -2,7 +2,6 @@
 // Created by kirill on 10.06.2021.
 //
 
-#include "esc.h"
 #include "ui.h"
 #include <string.h>
 #include <pthread.h>
@@ -14,6 +13,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "../file_controller/file_controller.h"
+#include "../net/udp.h"
 
 static struct termios stored_settings;
 
@@ -100,7 +100,7 @@ void start_ui(application_context *app_context) {
 
     log_desc->logStartX = logXStart;
     log_desc->logStartY = logYStart;
-    log_desc->max_string = logFrameHeight - 2;
+    log_desc->max_string = logFrameHeight - 4;
 
     //Command line frame
     int cmdXStart = logXStart;
@@ -128,22 +128,35 @@ void start_ui(application_context *app_context) {
 
     app_context->ui_ready = 1;
 
-    while (1) {
-        gotoxy(cmd_desc->cmdEnterStartX, cmd_desc->cmdEnterStartY);
+    while (!app_context->exit_code) {
         cmd_res = process_command();
         if (strcmp(cmd_res.cmd, "show") == 0) {
             if (cmd_res.arg != NULL) {
                 file_description *file_desc = find_file_description(app_context->list_fd_head, cmd_res.arg);
+                char *str = malloc(100 * sizeof(char));
+                char *fd_str = malloc(100 * sizeof(char));
                 if (file_desc != NULL) {
-                    char *str = malloc(512 * sizeof(char));
-                    char *fd_str = malloc(512 * sizeof(char));
                     strcpy(fd_str, "Found file description - ");
-                    sprintf(str, "%s/%s/%d\n\n", file_desc->name, file_desc->hash, file_desc->size);
+                    sprintf(str, "%s/%s/%d", file_desc->name, file_desc->hash, file_desc->size);
                     strcat(fd_str, str);
-                    free(str);
-                    print_log(fd_str);
+                    print_log(fd_str, BRIGHT);
+                } else if (strcmp(cmd_res.arg, "") == 0){
+                    sprintf(str, "Specify filename");
+                    print_log(str, BRIGHT);
+                } else {
+                    sprintf(str, "File '%s' not found", cmd_res.arg);
+                    print_log(str, BRIGHT);
                 }
+                free(str);
+                free(fd_str);
             }
+        } else if (strcmp(cmd_res.cmd, "download") == 0) {
+            search_other_servers(app_context, cmd_res.arg, 8888);
+        } else if (strcmp(cmd_res.cmd, "") != 0){
+            char *str = malloc(256 * sizeof(char));
+            sprintf(str, "Incorrect command '%s'. Try again", cmd_res.cmd);
+            print_log(str, DIM);
+            free(str);
         }
         gotoxy(cmd_desc->cmdEnterStartX, cmd_desc->cmdEnterStartY);
         clear_symbols(cmdFrameWidth - 4);
@@ -169,6 +182,8 @@ command_result process_command() {
 
     if (count_space > 1) {
 
+    } else if (count_space == 0) {
+        strcpy(cmd_res.cmd, cmd);
     } else {
         if (count_space == 1) {
             char *c;
@@ -201,15 +216,31 @@ command_result process_command() {
     return cmd_res;
 }
 
-void print_log(char *log_str) {
+void print_log(char *log_str, int format) {
+    if (sc->log_count + 1> log_desc->max_string) {
+        sc->log_count = 0;
+        clear_log();
+    }
+
+    save_cursor();
     gotoxy(log_desc->logStartX + 2, log_desc->logStartY + 3 + sc->log_count);
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
+    set_display_atrib(format);
     printf("[%02d:%02d:%02d] ", tm.tm_hour, tm.tm_min, tm.tm_sec);
     printf("%s", log_str);
+    resetcolor();
     sc->log_count++;
-    gotoxy(cmd_desc->cmdEnterStartX, cmd_desc->cmdEnterStartY);
+    restore_cursor();
     fflush(stdout);
+
+}
+
+void clear_log() {
+    for (int i = 0; i < log_desc->max_string + 1; i++) {
+        gotoxy(log_desc->logStartX + 2, log_desc->logStartY + 3 + i);
+        clear_symbols(150);
+    }
 }
 
 void print_horizontal_line(char symbol[1], int count, int startX, int y) {

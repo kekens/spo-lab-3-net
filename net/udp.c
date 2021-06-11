@@ -94,14 +94,17 @@ void start_udp_listener(application_context *app_context) {
         app_context->instance_count = 1;
     }
 
-//    while (!app_context->ui_ready) {
-//
-//    }
+    while (!app_context->ui_ready) {
 
+    }
 
-//    print_log("UDP started on port 1111");
 
     char *buf = calloc(1, BUF_SIZE);
+
+    sprintf(buf, "UDP started on port %d", udp_port);
+    print_log(buf, F_YELLOW);
+
+    memset(buf, 0, BUF_SIZE);
 
     while (!app_context->exit_code) {
 
@@ -116,8 +119,7 @@ void start_udp_listener(application_context *app_context) {
         if (strstr(buf, " instance")) {
             app_context->instance_count = buf[0] - '0';
         } else {
-
-            if (fd->name != NULL) {
+            if (fd != NULL) {
                 udp_answer udp_answ = {0};
                 tcp_description *tcp_desc = calloc(1, sizeof(tcp_description));
                 tcp_server_thread_description *tcp_server_thread_description = calloc(1, sizeof(tcp_server_thread_description));
@@ -141,7 +143,7 @@ void start_udp_listener(application_context *app_context) {
                 sendto(sockfd, &udp_answ, sizeof(udp_answer), MSG_CONFIRM,
                        (const struct sockaddr *) &foreign_address, len);
             } else {
-//                printf("file desc not found\n");
+
             }
         }
     }
@@ -195,6 +197,14 @@ void search_other_servers(application_context *app_context, char *file_descripti
     udp_answer *answer = (udp_answer *) buffer;
 
     if (answer->success_result) {
+        char *str = malloc(100 * sizeof(char));
+        sprintf(str, "File found on UDP server with port %d", udp_port);
+        print_log(str, F_GREEN);
+        memset(str, 0, 100);
+        sprintf(str, "Started TCP server with port %d", answer->port);
+        print_log(str, F_GREEN);
+        free(str);
+
         pthread_t *tcp_client_thread = (pthread_t *) malloc(sizeof(pthread_t));
         tcp_client_thread_description *tcp_client_td = malloc(sizeof(tcp_client_thread_description));
         tcp_client_td->app_context = app_context;
@@ -203,6 +213,7 @@ void search_other_servers(application_context *app_context, char *file_descripti
         tcp_client_td->address = foreign_address.sin_addr.s_addr;
         pthread_create(tcp_client_thread, NULL, (void *) start_tcp_client, tcp_client_td);
     } else {
+        print_log("File not found on other servers", F_CYAN);
     }
 
 }
