@@ -17,6 +17,8 @@
 #define UDP_PORT 8888
 #define BUF_SIZE 1024
 
+int udp_port = 0;
+
 void inform_new_instance(int count, int port) {
     int sockfd;
     struct sockaddr_in server_address;
@@ -70,7 +72,7 @@ void start_udp_listener(application_context *app_context) {
     memset(&server_address, 0, sizeof(server_address));
     memset(&foreign_address, 0, sizeof(foreign_address));
 
-    int udp_port = UDP_PORT;
+    udp_port = UDP_PORT;
     int broadcast = 1;
 
     if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
@@ -86,10 +88,12 @@ void start_udp_listener(application_context *app_context) {
         server_address.sin_port = htons(++udp_port);
     }
 
-    if (udp_port > 8888) {
-        for (int i = 0; i < udp_port - 8888; i++) {
-            inform_new_instance(udp_port + 1 - 8888, i + 8888);
+
+    if (udp_port > UDP_PORT) {
+        for (int i = 0; i < udp_port - UDP_PORT; i++) {
+            inform_new_instance(udp_port + 1 - UDP_PORT, i + UDP_PORT);
         }
+        app_context->instance_count = udp_port - UDP_PORT + 1;
     } else {
         app_context->instance_count = 1;
     }
@@ -106,6 +110,7 @@ void start_udp_listener(application_context *app_context) {
 
     memset(buf, 0, BUF_SIZE);
 
+
     while (!app_context->exit_code) {
 
         int len, n;
@@ -114,11 +119,12 @@ void start_udp_listener(application_context *app_context) {
         len = sizeof(foreign_address);
         n = recvfrom(sockfd, buf, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &foreign_address, (socklen_t *) &len);
 
-        file_description *fd = find_file_description(app_context->list_fd_head, buf);
 
         if (strstr(buf, " instance")) {
             app_context->instance_count = buf[0] - '0';
         } else {
+            file_description *fd = find_file_description(app_context->list_fd_head, buf);
+
             if (fd != NULL) {
                 udp_answer udp_answ = {0};
                 tcp_description *tcp_desc = calloc(1, sizeof(tcp_description));
@@ -150,7 +156,14 @@ void start_udp_listener(application_context *app_context) {
 
 }
 
-void search_other_servers(application_context *app_context, char *file_description_str, int port) {
+void search_other_servers(udp_search_data *udp_sd) {
+    for (int i = 0; i < udp_sd->app_context->instance_count; i++) {
+        if ((UDP_PORT + i) != udp_port)
+            check_server(udp_sd->app_context, udp_sd->file_str, UDP_PORT + i);
+    }
+}
+
+void check_server(application_context *app_context, char *file_description_str, int port) {
 
     int sockfd;
     struct sockaddr_in server_address, foreign_address;
@@ -163,7 +176,7 @@ void search_other_servers(application_context *app_context, char *file_descripti
     memset(&server_address, 0, sizeof(server_address));
     memset(&foreign_address, 0, sizeof(foreign_address));
 
-    int udp_port = UDP_PORT;
+//    int udp_port = UDP_PORT;
     int broadcast = 1;
 
     struct timeval tv;
@@ -198,7 +211,7 @@ void search_other_servers(application_context *app_context, char *file_descripti
 
     if (answer->success_result) {
         char *str = malloc(100 * sizeof(char));
-        sprintf(str, "File found on UDP server with port %d", udp_port);
+        sprintf(str, "File found on UDP server with port %d", htons(foreign_address.sin_port));
         print_log(str, F_GREEN);
         memset(str, 0, 100);
         sprintf(str, "Started TCP server with port %d", answer->port);

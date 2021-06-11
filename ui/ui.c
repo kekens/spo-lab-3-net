@@ -132,7 +132,7 @@ void start_ui(application_context *app_context) {
         cmd_res = process_command();
         if (strcmp(cmd_res.cmd, "show") == 0) {
             if (cmd_res.arg != NULL) {
-                file_description *file_desc = find_file_description(app_context->list_fd_head, cmd_res.arg);
+                file_description *file_desc = search_file_description_by_name(app_context->list_fd_head, cmd_res.arg);
                 char *str = malloc(100 * sizeof(char));
                 char *fd_str = malloc(100 * sizeof(char));
                 if (file_desc != NULL) {
@@ -151,26 +151,32 @@ void start_ui(application_context *app_context) {
                 free(fd_str);
             }
         } else if (strcmp(cmd_res.cmd, "download") == 0) {
-            search_other_servers(app_context, cmd_res.arg, 8888);
-        } else if (strcmp(cmd_res.cmd, "") != 0){
-            char *str = malloc(256 * sizeof(char));
-            sprintf(str, "Incorrect command '%s'. Try again", cmd_res.cmd);
-            print_log(str, DIM);
-            free(str);
+            udp_search_data *udp_sd = calloc(1, sizeof(udp_search_data));
+            udp_sd->app_context = app_context;
+            udp_sd->file_str = cmd_res.arg;
+
+            pthread_t *udp_thread = malloc(sizeof(pthread_t));
+            pthread_create(udp_thread, NULL, (void *) search_other_servers, udp_sd);
+        } else if (strcmp(cmd_res.cmd, "exit") == 0) {
+            app_context->exit_code = 1;
+        } else if (strcmp(cmd_res.cmd, "") != 0) {
+                char *str = malloc(256 * sizeof(char));
+                sprintf(str, "Incorrect command '%s'. Try again", cmd_res.cmd);
+                print_log(str, DIM);
+                free(str);
         }
         gotoxy(cmd_desc->cmdEnterStartX, cmd_desc->cmdEnterStartY);
         clear_symbols(cmdFrameWidth - 4);
-//        _exit(0);
     }
 
 }
 
 command_result process_command() {
-    char cmd[30];
+    char cmd[100];
     int count_space = 0;
     command_result cmd_res = {0};
 
-    fgets(cmd, 30, stdin);
+    fgets(cmd, 100, stdin);
     cmd[strlen(cmd) - 1] = 0;
 
     for (int i = 0; i < strlen(cmd); i++) {
@@ -207,8 +213,8 @@ command_result process_command() {
                 strcpy(cmd_res.cmd, substr_cmd);
                 strcpy(cmd_res.arg, substr_arg);
             }
-        } else if (strcmp(cmd, "close") == 0) {
-            strcpy(cmd_res.cmd, "close");
+        } else if (strcmp(cmd, "exit") == 0) {
+            strcpy(cmd_res.cmd, "exit");
         }
 
     }

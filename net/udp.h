@@ -7,6 +7,11 @@
 
 #include "../application_context.h"
 
+typedef struct udp_search_data {
+    application_context *app_context;
+    char *file_str;
+} udp_search_data;
+
 typedef struct udp_answer {
     int success_result;
     int port;
@@ -15,6 +20,8 @@ typedef struct udp_answer {
 
 void start_udp_listener(application_context *app_context);
 
-void search_other_servers(application_context *app_context, char *search_file_description, int port);
+void check_server(application_context *app_context, char *search_file_description, int port);
+
+void search_other_servers(udp_search_data *udp_sd);
 
 #endif //LR3_NET_UDP_H

@@ -37,5 +37,6 @@ void scan_dir(file_description_node **fd_node_current, char *path);
 int calculate_file_size(char *path);
 char* calculate_file_hash(char *path);
 file_description* find_file_description(file_description_node *fd_list_head, char *search_file_desc);
+file_description* search_file_description_by_name(file_description_node *fd_list_head, char *search_file_desc);
 
 #endif //LR3_NET_FILE_CONTROLLER_H

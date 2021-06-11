@@ -138,7 +138,27 @@ char* calculate_file_hash(char *path) {
     return hash;
 }
 
+file_description *search_file_description_by_name(file_description_node *fd_list_head, char *search_file_desc) {
+    file_description_node *current_node = fd_list_head;
 
+    int i = 0;
+    while (current_node->file_desc_node_next != NULL) {
+        char *current_file_desc = calloc(1, 1024);
+
+        file_description *fd = current_node->file_desc_entry;
+        strcat(current_file_desc, fd->name);
+
+        if (!strcmp(current_file_desc, search_file_desc)) {
+
+            free(current_file_desc);
+            return fd;
+        }
+
+        current_node = current_node->file_desc_node_next;
+    }
+
+    return NULL;
+}
 
 file_description *find_file_description(file_description_node *fd_list_head, char *search_file_desc) {
     file_description_node *current_node = fd_list_head;
@@ -149,6 +169,12 @@ file_description *find_file_description(file_description_node *fd_list_head, cha
 
         file_description *fd = current_node->file_desc_entry;
         strcat(current_file_desc, fd->name);
+        strcat(current_file_desc, "/");
+        strcat(current_file_desc, fd->hash);
+        char buf[30];
+        sprintf(buf, "%d", fd->size);
+        strcat(current_file_desc, "/");
+        strcat(current_file_desc, buf);
 
         if (!strcmp(current_file_desc, search_file_desc)) {
 
