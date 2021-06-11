@@ -131,32 +131,33 @@ void start_ui(application_context *app_context) {
     while (!app_context->exit_code) {
         cmd_res = process_command();
         if (strcmp(cmd_res.cmd, "show") == 0) {
-            if (cmd_res.arg != NULL) {
-                file_description *file_desc = search_file_description_by_name(app_context->list_fd_head, cmd_res.arg);
-                char *str = malloc(100 * sizeof(char));
-                char *fd_str = malloc(100 * sizeof(char));
-                if (file_desc != NULL) {
-                    strcpy(fd_str, "Found file description - ");
-                    sprintf(str, "%s/%s/%d", file_desc->name, file_desc->hash, file_desc->size);
-                    strcat(fd_str, str);
-                    print_log(fd_str, BRIGHT);
-                } else if (strcmp(cmd_res.arg, "") == 0){
-                    sprintf(str, "Specify filename");
-                    print_log(str, BRIGHT);
-                } else {
-                    sprintf(str, "File '%s' not found", cmd_res.arg);
-                    print_log(str, BRIGHT);
-                }
-                free(str);
-                free(fd_str);
+            file_description *file_desc = search_file_description_by_name(app_context->list_fd_head, cmd_res.arg);
+            char *str = malloc(100 * sizeof(char));
+            char *fd_str = malloc(100 * sizeof(char));
+            if (file_desc != NULL) {
+                strcpy(fd_str, "Found file description - ");
+                sprintf(str, "%s/%s/%d", file_desc->name, file_desc->hash, file_desc->size);
+                strcat(fd_str, str);
+                print_log(fd_str, BRIGHT);
+            } else if (strcmp(cmd_res.arg, "") == 0){
+                print_log("Specify the filename", BRIGHT);
+            } else {
+                sprintf(str, "File '%s' not found", cmd_res.arg);
+                print_log(str, BRIGHT);
             }
+            free(str);
+            free(fd_str);
         } else if (strcmp(cmd_res.cmd, "download") == 0) {
-            udp_search_data *udp_sd = calloc(1, sizeof(udp_search_data));
-            udp_sd->app_context = app_context;
-            udp_sd->file_str = cmd_res.arg;
+            if (strcmp(cmd_res.arg, "") == 0) {
+                print_log("Specify the filename/hash/size", DIM);
+            } else {
+                udp_search_data *udp_sd = calloc(1, sizeof(udp_search_data));
+                udp_sd->app_context = app_context;
+                udp_sd->file_str = cmd_res.arg;
 
-            pthread_t *udp_thread = malloc(sizeof(pthread_t));
-            pthread_create(udp_thread, NULL, (void *) search_other_servers, udp_sd);
+                pthread_t *udp_thread = malloc(sizeof(pthread_t));
+                pthread_create(udp_thread, NULL, (void *) search_other_servers, udp_sd);
+            }
         } else if (strcmp(cmd_res.cmd, "exit") == 0) {
             app_context->exit_code = 1;
         } else if (strcmp(cmd_res.cmd, "") != 0) {
@@ -235,11 +236,9 @@ void print_log(char *log_str, int format) {
     set_display_atrib(format);
     printf("[%02d:%02d:%02d] ", tm.tm_hour, tm.tm_min, tm.tm_sec);
     printf("%s", log_str);
-    resetcolor();
     sc->log_count++;
     restore_cursor();
     fflush(stdout);
-
 }
 
 void clear_log() {

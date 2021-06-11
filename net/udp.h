@@ -20,7 +20,7 @@ typedef struct udp_answer {
 
 void start_udp_listener(application_context *app_context);
 
-void check_server(application_context *app_context, char *search_file_description, int port);
+void check_server(application_context *app_context, char *search_file_description, int port, int *found);
 
 void search_other_servers(udp_search_data *udp_sd);
 
