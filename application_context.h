@@ -12,6 +12,7 @@ typedef struct application_context {
     int instance_count;
     int exit_code;
     char *root_path;
+    int ui_ready;
 } application_context;
 
 #endif //LR3_NET_APPLICATION_CONTEXT_H

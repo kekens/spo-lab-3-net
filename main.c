@@ -26,11 +26,12 @@ int main(int argc, char *argv[]) {
         scan_all_directories(list_fd_head, argv[1]);
         print_list(list_fd_head);
 
-        start_ui(app_context);
+
 
         pthread_t *udp_thread = malloc(sizeof(pthread_t));
         pthread_create(udp_thread, NULL, (void *) start_udp_listener, app_context);
 
+        start_ui(app_context);
 
 //        while (1) {
 //            char cmd[20];

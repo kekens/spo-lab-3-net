@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include "../ui/ui.h"
 
 #include "../file_controller/file_controller.h"
 
@@ -92,6 +93,13 @@ void start_udp_listener(application_context *app_context) {
     } else {
         app_context->instance_count = 1;
     }
+
+//    while (!app_context->ui_ready) {
+//
+//    }
+
+
+//    print_log("UDP started on port 1111");
 
     char *buf = calloc(1, BUF_SIZE);
 

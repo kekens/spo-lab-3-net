@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "../ui/ui.h"
 
 #define TCP_PORT 11111
 

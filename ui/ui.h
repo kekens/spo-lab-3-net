@@ -13,10 +13,28 @@ typedef struct command_result {
     char arg[256];
 } command_result;
 
+typedef struct string_count {
+    int download_count;
+    int upload_count;
+    int log_count;
+} string_count;
+
+typedef struct log_frame_description {
+    int logStartX;
+    int logStartY;
+    int max_string;
+} log_frame_description;
+
+typedef struct cmd_enter_description {
+    int cmdEnterStartX;
+    int cmdEnterStartY;
+} cmd_enter_description;
+
 void start_ui(application_context *app_context);
 void print_horizontal_line(char symbol[1], int count, int startX, int y);
 void print_vertical_line(char symbol[1], int count, int x, int startY);
 int get_pos(int *y, int *x);
 command_result process_command();
+void print_log(char *log_str);
 
 #endif //LR3_NET_UI_H

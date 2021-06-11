@@ -49,5 +49,6 @@
 #define cursor_up(count) printf(ESC "[%dA", count);
 #define set_cursor_column(column) printf(ESC "[%dG", column);
 #define clear_string_until_end() printf(ESC "[0K");
+#define clear_symbols(count) printf(ESC "[%dX", count);
 
 #endif //LR3_NET_ESC_H

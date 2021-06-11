@@ -12,9 +12,14 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <stdlib.h>
+#include <time.h>
 #include "../file_controller/file_controller.h"
 
 static struct termios stored_settings;
+
+string_count *sc;
+log_frame_description *log_desc;
+cmd_enter_description *cmd_desc;
 
 void set_keypress(void)
 {
@@ -40,6 +45,11 @@ void reset_keypress(void)
 }
 
 void start_ui(application_context *app_context) {
+
+    sc = calloc(1, sizeof(string_count));
+    log_desc = calloc(1, sizeof(log_desc));
+    cmd_desc = calloc(1, sizeof(cmd_desc));
+
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
@@ -88,6 +98,10 @@ void start_ui(application_context *app_context) {
     print_vertical_line("|", logFrameHeight , logXStart + logFrameWidth, logYStart + 2);
     print_horizontal_line("-", logFrameWidth, logXStart, logYStart + logFrameHeight + 1);
 
+    log_desc->logStartX = logXStart;
+    log_desc->logStartY = logYStart;
+    log_desc->max_string = logFrameHeight - 2;
+
     //Command line frame
     int cmdXStart = logXStart;
     int cmdYStart;
@@ -109,23 +123,30 @@ void start_ui(application_context *app_context) {
     printf(" > ");
     fflush(stdout);
 
-    int commandEnterX;
-    int commandEnterY;
-
-    get_pos(&commandEnterY, &commandEnterX);
+    get_pos(&cmd_desc->cmdEnterStartY, &cmd_desc->cmdEnterStartX);
     command_result cmd_res = {0};
 
+    app_context->ui_ready = 1;
+
     while (1) {
+        gotoxy(cmd_desc->cmdEnterStartX, cmd_desc->cmdEnterStartY);
         cmd_res = process_command();
-//        printf("\n\n\n%s\n\n%s\n", cmd_res.cmd, cmd_res.arg);
-//        printf("\n\n\n|%s|\n\n", cmd_res.cmd);
-//        printf("\n\n\n|%s|\n\n", cmd_res.arg);
         if (strcmp(cmd_res.cmd, "show") == 0) {
-            file_description *file_desc = find_file_description(app_context->list_fd_head, cmd_res.arg);
-            printf("%s/%s/%d\n\n", file_desc->name, file_desc->hash, file_desc->size);
+            if (cmd_res.arg != NULL) {
+                file_description *file_desc = find_file_description(app_context->list_fd_head, cmd_res.arg);
+                if (file_desc != NULL) {
+                    char *str = malloc(512 * sizeof(char));
+                    char *fd_str = malloc(512 * sizeof(char));
+                    strcpy(fd_str, "Found file description - ");
+                    sprintf(str, "%s/%s/%d\n\n", file_desc->name, file_desc->hash, file_desc->size);
+                    strcat(fd_str, str);
+                    free(str);
+                    print_log(fd_str);
+                }
+            }
         }
-        gotoxy(commandEnterX, commandEnterY);
-        clear_string_until_end();
+        gotoxy(cmd_desc->cmdEnterStartX, cmd_desc->cmdEnterStartY);
+        clear_symbols(cmdFrameWidth - 4);
 //        _exit(0);
     }
 
@@ -138,7 +159,6 @@ command_result process_command() {
 
     fgets(cmd, 30, stdin);
     cmd[strlen(cmd) - 1] = 0;
-
 
     for (int i = 0; i < strlen(cmd); i++) {
         if (cmd[i] == ' ') {
@@ -179,6 +199,17 @@ command_result process_command() {
     }
 
     return cmd_res;
+}
+
+void print_log(char *log_str) {
+    gotoxy(log_desc->logStartX + 2, log_desc->logStartY + 3 + sc->log_count);
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    printf("[%02d:%02d:%02d] ", tm.tm_hour, tm.tm_min, tm.tm_sec);
+    printf("%s", log_str);
+    sc->log_count++;
+    gotoxy(cmd_desc->cmdEnterStartX, cmd_desc->cmdEnterStartY);
+    fflush(stdout);
 }
 
 void print_horizontal_line(char symbol[1], int count, int startX, int y) {
