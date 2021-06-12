@@ -89,9 +89,11 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
             pread(file, file_answer.file_part, size, 4096 * offset);
             offset++;
             write(connfd, &file_answer, sizeof(file_answer));
-        } else if (strncmp(cmd, "prg", sizeof(cmd)) == 0) {
+
             read(connfd, &progress_data, sizeof(tcp_client_progress_data));
             update_upload_progress(progress_data.current_size, fd->size, progress_data.current_percents, upload_file_index);
+        } else if (strncmp(cmd, "end", 3) == 0) {
+            update_upload_progress(fd->size, fd->size, 100, upload_file_index);
         }
     }
 
@@ -161,17 +163,12 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
         tcp_server_file_answer file_answer;
         tcp_client_progress_data progress_data;
 
+
         while (1) {
             int calc_file_size = calculate_file_size(file_path);
             int current_percents = (int) ((((float) calc_file_size) / fd->size) * 100);
 
             update_download_progress(current_size, fd->size, current_percents, download_file_index);
-
-            strncpy(command, "prg", 3);
-            write(sockfd, &command, sizeof(command));
-            progress_data.current_size = current_size;
-            progress_data.current_percents = current_percents;
-            write(sockfd, &progress_data, sizeof(progress_data));
 
             if (current_size < fd->size) {
                 strncpy(command, "dwn", 3);
@@ -185,11 +182,16 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
                 write(sockfd, &command, sizeof(command));
                 char *str = malloc(BUF_SIZE);
                 memset(str, 0, BUF_SIZE);
+
                 sprintf(str, "Downloading file '%s' finished", fd->name);
                 print_log(str, F_GREEN);
                 free(str);
                 return;
             }
+
+            progress_data.current_size = current_size;
+            progress_data.current_percents = current_percents;
+            write(sockfd, &progress_data, sizeof(progress_data));
 
         }
     } else {
