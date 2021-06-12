@@ -26,12 +26,12 @@ typedef struct log_frame_description {
     int max_string;
 } log_frame_description;
 
-typedef struct download_frame_description {
-    int dfStartX;
-    int dfStartyY;
-    int dfWidth;
+typedef struct progress_frame_description {
+    int frameStartX;
+    int frameStartyY;
+    int frameWidth;
     int max_string;
-} download_frame_description;
+} progress_frame_description;
 
 typedef struct cmd_enter_description {
     int cmdEnterStartX;
@@ -48,8 +48,12 @@ command_result process_command();
 void print_log(char *log_str, int format);
 void clear_log();
 
-void print_download(char *filename, int size, int *file_index);
-void update_download_progress(int size, int file_size, int percents, int file_index);
+void print_download(char *filename, int *file_index);
+void update_download_progress(int current_size, int file_size, int percents, int file_index);
 void clear_downloads();
+
+void print_upload(char *filename, int *file_index);
+void update_upload_progress(int current_size, int file_size, int percents, int file_index);
+void clear_uploads();
 
 #endif //LR3_NET_UI_H

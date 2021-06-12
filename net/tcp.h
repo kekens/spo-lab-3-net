@@ -34,12 +34,15 @@ typedef struct tcp_server_file_answer {
     int file_part_len;
 } tcp_server_file_answer;
 
+typedef struct tcp_client_progress_data {
+    int current_size;
+    int current_percents;
+} tcp_client_progress_data;
+
 void create_tcp_socket(tcp_description *td);
 
 void start_tcp_server(tcp_server_thread_description *tcp_server_thread_description);
 
 void start_tcp_client(tcp_client_thread_description *tcp_client_thread_description);
-
-void download_file(int sockfd, file_description file_desc, application_context *app_context);
 
 #endif //LR3_NET_TCP_H

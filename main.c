@@ -26,28 +26,14 @@ int main(int argc, char *argv[]) {
         scan_all_directories(list_fd_head, argv[1]);
         print_list(list_fd_head);
 
-
-
         pthread_t *udp_thread = malloc(sizeof(pthread_t));
         pthread_create(udp_thread, NULL, (void *) start_udp_listener, app_context);
 
         start_ui(app_context);
 
-//        while (1) {
-//            char cmd[20];
-//            printf("enter command: ");
-//            scanf("%s", cmd);
-//            if (strcmp(cmd, "download") == 0) {
-//                search_other_servers(app_context, "SUBD_LR1_Bobryakov_Kolokolov_P33122.pdf/103686/ee762d60ba0c9ef3ffc204ede187fd72", 8899);
-//            } else if (strcmp(cmd, "exit") == 0) {
-//                app_context->exit_code = 1;
-//                break;
-//            }
-//        }
-
         pthread_join(*udp_thread, NULL);
 
-
+        clrscr();
         free(list_fd_head);
     }
     return 0;

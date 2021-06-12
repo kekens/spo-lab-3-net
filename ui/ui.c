@@ -19,7 +19,8 @@ static struct termios stored_settings;
 
 string_count *sc;
 log_frame_description *log_desc;
-download_frame_description *df_desc;
+progress_frame_description *df_desc;
+progress_frame_description *uf_desc;
 cmd_enter_description *cmd_desc;
 
 void set_keypress(void)
@@ -49,7 +50,8 @@ void start_ui(application_context *app_context) {
 
     sc = calloc(1, sizeof(string_count));
     log_desc = calloc(1, sizeof(log_frame_description));
-    df_desc = calloc(1, sizeof(download_frame_description));
+    df_desc = calloc(1, sizeof(progress_frame_description));
+    uf_desc = calloc(1, sizeof(progress_frame_description));
     cmd_desc = calloc(1, sizeof(cmd_desc));
 
     struct winsize w;
@@ -84,10 +86,15 @@ void start_ui(application_context *app_context) {
     print_horizontal_line("-", subFrameWidth, downloadingXStart, downloadingYStart + subFrameHeight + 1);
     print_horizontal_line("-", subFrameWidth, uploadingXStart, downloadingYStart + subFrameHeight + 1);
 
-    df_desc->dfStartX = downloadingXStart + 2;
-    df_desc->dfStartyY = downloadingYStart + 3;
+    df_desc->frameStartX = downloadingXStart + 2;
+    df_desc->frameStartyY = downloadingYStart + 3;
     df_desc->max_string = subFrameHeight - 4;
-    df_desc->dfWidth = subFrameWidth - 4;
+    df_desc->frameWidth = subFrameWidth - 4;
+
+    uf_desc->frameStartX = uploadingXStart + 2;
+    uf_desc->frameStartyY = uploadingYStart + 3;
+    uf_desc->max_string = subFrameHeight - 4;
+    uf_desc->frameWidth = subFrameWidth - 4;
 
     //Action/events log frame
     int logXStart = downloadingXStart;
@@ -233,41 +240,74 @@ command_result process_command() {
     return cmd_res;
 }
 
-void print_download(char *filename, int size, int *file_index   ) {
+void print_download(char *filename, int *file_index) {
     if (sc->download_count + 1> df_desc->max_string) {
         sc->download_count = 0;
         clear_downloads();
     }
 
     save_cursor();
-    gotoxy(df_desc->dfStartX, df_desc->dfStartyY + sc->download_count);
+    gotoxy(df_desc->frameStartX, df_desc->frameStartyY + sc->download_count);
     char *str = malloc(100 * sizeof(char));
     memset(str, ' ', 100 * sizeof(char));
     strcpy(str, filename);
-    for (int i = 0; i < df_desc->dfWidth * 0.4; i++) {
+    for (int i = 0; i < df_desc->frameWidth * 0.4; i++) {
         printf("%c", str[i]);
     }
-    for (int i = 0; i < df_desc->dfWidth * 0.4; i++) {
-        printf(" ");
-    }
-    printf("0M/%dM | 0%%/100%%", (int) size / 1024 / 1024);
+    restore_cursor();
     free(str);
     *file_index = sc->download_count;
     sc->download_count++;
+    fflush(stdout);
+}
+
+void print_upload(char *filename, int *file_index) {
+    if (sc->upload_count + 1> uf_desc->max_string) {
+        sc->upload_count = 0;
+        clear_uploads();
+    }
+
+    save_cursor();
+    gotoxy(uf_desc->frameStartX, uf_desc->frameStartyY + sc->upload_count);
+    char *str = malloc(100 * sizeof(char));
+    memset(str, ' ', 100 * sizeof(char));
+    strcpy(str, filename);
+    for (int i = 0; i < uf_desc->frameWidth * 0.4; i++) {
+        printf("%c", str[i]);
+    }
     restore_cursor();
+    free(str);
+    *file_index = sc->upload_count;
+    sc->upload_count++;
     fflush(stdout);
 }
 
 void update_download_progress(int size, int file_size, int percents, int file_index) {
-    int offset = (int) df_desc->dfWidth * 0.8;
+    int offset = (int) df_desc->frameWidth * 0.8;
     char *str = malloc(BUF_SIZE);
     memset(str, 0, BUF_SIZE);
     sprintf(str, "|%d|%d|%d", size, percents, file_index);
 
     save_cursor();
-    gotoxy(df_desc->dfStartX + offset, df_desc->dfStartyY + file_index);
-    clear_symbols(df_desc->dfWidth - offset);
+    gotoxy(df_desc->frameStartX + offset, df_desc->frameStartyY + file_index);
+    clear_symbols(df_desc->frameWidth - offset);
     printf("%dM/%dM | %d%%/100%%", (int) size / 1024 / 1024, (int) file_size / 1024 / 1024, percents);
+    restore_cursor();
+    free(str);
+
+    fflush(stdout);
+}
+
+void update_upload_progress(int current_size, int file_size, int percents, int file_index) {
+    int offset = (int) uf_desc->frameWidth * 0.8;
+    char *str = malloc(BUF_SIZE);
+    memset(str, 0, BUF_SIZE);
+    sprintf(str, "|%d|%d|%d", current_size, percents, file_index);
+
+    save_cursor();
+    gotoxy(uf_desc->frameStartX + offset, uf_desc->frameStartyY + file_index);
+    clear_symbols(uf_desc->frameWidth - offset);
+    printf("%dM/%dM | %d%%/100%%", (int) current_size / 1024 / 1024, (int) file_size / 1024 / 1024, percents);
     restore_cursor();
     free(str);
 
@@ -301,11 +341,17 @@ void clear_log() {
 
 void clear_downloads() {
     for (int i = 0; i < df_desc->max_string + 1; i++) {
-        gotoxy(df_desc->dfStartX, df_desc->dfStartyY + i);
-        clear_symbols(df_desc->dfWidth);
+        gotoxy(df_desc->frameStartX, df_desc->frameStartyY + i);
+        clear_symbols(df_desc->frameWidth);
     }
 }
 
+void clear_uploads() {
+    for (int i = 0; i < uf_desc->max_string + 1; i++) {
+        gotoxy(uf_desc->frameStartX, uf_desc->frameStartyY + i);
+        clear_symbols(uf_desc->frameWidth);
+    }
+}
 
 void print_horizontal_line(char symbol[1], int count, int startX, int y) {
     gotoxy(startX, y);

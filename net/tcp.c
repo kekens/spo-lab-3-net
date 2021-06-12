@@ -70,9 +70,13 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
     char cmd[3];
     int file = open(fd->path, O_RDONLY);
     int offset = 0;
+    int upload_file_index = 0;
 
     strncpy(cmd, "xxx", 3);
     tcp_server_file_answer file_answer;
+    tcp_client_progress_data progress_data;
+
+    print_upload(fd->name, &upload_file_index);
 
     while (strncmp(cmd, "end", 3) != 0) {
         read(connfd, &cmd, sizeof(cmd));
@@ -85,14 +89,17 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
             pread(file, file_answer.file_part, size, 4096 * offset);
             offset++;
             write(connfd, &file_answer, sizeof(file_answer));
+        } else if (strncmp(cmd, "prg", sizeof(cmd)) == 0) {
+            read(connfd, &progress_data, sizeof(tcp_client_progress_data));
+            update_upload_progress(progress_data.current_size, fd->size, progress_data.current_percents, upload_file_index);
         }
     }
 
-
-
-}
-
-void download_file(int sockfd, file_description file_desc, application_context *app_context) {
+    str = malloc(BUF_SIZE);
+    memset(str, 0, BUF_SIZE);
+    sprintf(str, "Uploading file '%s' finished", fd->name);
+    print_log(str, F_GREEN);
+    free(str);
 
 }
 
@@ -132,7 +139,7 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
     print_log(str, F_GREEN);
     free(str);
 
-    int file_index = 0;
+    int download_file_index = 0;
 
     char *file_path = calloc(1, 1024);
 
@@ -142,7 +149,7 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
 
     int file = open(file_path, O_CREAT | O_WRONLY, 0777);
 
-    print_download(fd->name, fd->size, &file_index);
+    print_download(fd->name, &download_file_index);
 
     if (file >= 0) {
         push_fd_by_head(app_context->list_fd_head, fd);
@@ -152,14 +159,22 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
         int offset = 0;
         int current_size = 0;
         tcp_server_file_answer file_answer;
+        tcp_client_progress_data progress_data;
 
         while (1) {
             int calc_file_size = calculate_file_size(file_path);
             int current_percents = (int) ((((float) calc_file_size) / fd->size) * 100);
 
-            update_download_progress(current_size, fd->size, current_percents, file_index);
+            update_download_progress(current_size, fd->size, current_percents, download_file_index);
+
+            strncpy(command, "prg", 3);
+            write(sockfd, &command, sizeof(command));
+            progress_data.current_size = current_size;
+            progress_data.current_percents = current_percents;
+            write(sockfd, &progress_data, sizeof(progress_data));
 
             if (current_size < fd->size) {
+                strncpy(command, "dwn", 3);
                 write(sockfd, &command, sizeof(command));
                 read(sockfd, &file_answer, sizeof(file_answer));
                 pwrite(file, &file_answer.file_part, file_answer.file_part_len, offset * 4096);

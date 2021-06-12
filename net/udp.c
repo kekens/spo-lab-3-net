@@ -122,6 +122,11 @@ void start_udp_listener(application_context *app_context) {
             file_description *fd = find_file_description(app_context->list_fd_head, buf);
 
             if (fd != NULL) {
+                char *str = malloc(BUF_SIZE);
+                memset(str, 0, BUF_SIZE);
+                sprintf(str, "Starting uploading file '%s'", fd->name);
+                print_log(str, F_GREEN);
+                free(str);
                 udp_answer udp_answ = {0};
                 tcp_description *tcp_desc = calloc(1, sizeof(tcp_description));
                 tcp_server_thread_description *tcp_server_thread_description = calloc(1, sizeof(tcp_server_thread_description));
@@ -227,7 +232,7 @@ void check_server(application_context *app_context, char *file_description_str, 
     if (answer->success_result) {
         char *str = malloc(BUF_SIZE);
         memset(str, 0, BUF_SIZE);
-        sprintf(str, "File found on UDP server with port %d", htons(foreign_address.sin_port));
+        sprintf(str, "File '%s' found on UDP server with port %d", answer->file_desc_send.name, htons(foreign_address.sin_port));
         print_log(str, F_GREEN);
         free(str);
 
