@@ -174,7 +174,7 @@ void start_ui(application_context *app_context) {
                 pthread_t *udp_thread = malloc(sizeof(pthread_t));
                 pthread_create(udp_thread, NULL, (void *) search_other_servers, udp_sd);
             }
-        } else if (strcmp(cmd_res.cmd, "exit") == 0) {
+        } else if (strcmp(cmd_res.cmd, "close") == 0) {
             app_context->exit_code = 1;
         } else if (strcmp(cmd_res.cmd, "") != 0) {
                 char *str = malloc(BUF_SIZE);
@@ -231,8 +231,8 @@ command_result process_command() {
                 strcpy(cmd_res.cmd, substr_cmd);
                 strcpy(cmd_res.arg, substr_arg);
             }
-        } else if (strcmp(cmd, "exit") == 0) {
-            strcpy(cmd_res.cmd, "exit");
+        } else if (strcmp(cmd, "close") == 0) {
+            strcpy(cmd_res.cmd, "close");
         }
 
     }

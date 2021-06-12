@@ -79,6 +79,15 @@ void start_udp_listener(application_context *app_context) {
         return;
     }
 
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+        perror("socket timer failed");
+        return;
+    }
+
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = INADDR_ANY;
     server_address.sin_port = htons(udp_port);
@@ -125,7 +134,7 @@ void start_udp_listener(application_context *app_context) {
                 char *str = malloc(BUF_SIZE);
                 memset(str, 0, BUF_SIZE);
                 sprintf(str, "Starting uploading file '%s'", fd->name);
-                print_log(str, F_GREEN);
+                print_log(str, F_BLUE);
                 free(str);
                 udp_answer udp_answ = {0};
                 tcp_description *tcp_desc = calloc(1, sizeof(tcp_description));
@@ -233,7 +242,7 @@ void check_server(application_context *app_context, char *file_description_str, 
         char *str = malloc(BUF_SIZE);
         memset(str, 0, BUF_SIZE);
         sprintf(str, "File '%s' found on UDP server with port %d", answer->file_desc_send.name, htons(foreign_address.sin_port));
-        print_log(str, F_GREEN);
+        print_log(str, F_BLUE);
         free(str);
 
         pthread_t *tcp_client_thread = (pthread_t *) malloc(sizeof(pthread_t));

@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
 
         pthread_join(*udp_thread, NULL);
 
+        home();
         clrscr();
         free(list_fd_head);
     }

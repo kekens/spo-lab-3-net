@@ -55,7 +55,7 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
     char *str = malloc(BUF_SIZE);
     memset(str, 0, BUF_SIZE);
     sprintf(str, "Started TCP server with port %d", td->tcp_port);
-    print_log(str, F_GREEN);
+    print_log(str, F_BLUE);
     free(str);
 
     len = sizeof(td->client_address);
@@ -100,7 +100,7 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
     str = malloc(BUF_SIZE);
     memset(str, 0, BUF_SIZE);
     sprintf(str, "Uploading file '%s' finished", fd->name);
-    print_log(str, F_GREEN);
+    print_log(str, F_BLUE);
     free(str);
 
 }
@@ -138,7 +138,7 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
     char *str = malloc(BUF_SIZE);
     memset(str, 0, BUF_SIZE);
     sprintf(str, "Connected to the server with TCP port %d", tcp_client_thread_description->port);
-    print_log(str, F_GREEN);
+    print_log(str, F_BLUE);
     free(str);
 
     int download_file_index = 0;
@@ -184,7 +184,7 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
                 memset(str, 0, BUF_SIZE);
 
                 sprintf(str, "Downloading file '%s' finished", fd->name);
-                print_log(str, F_GREEN);
+                print_log(str, F_BLUE);
                 free(str);
                 return;
             }
