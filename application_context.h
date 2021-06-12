@@ -7,6 +7,8 @@
 
 #include "file_controller/file_controller.h"
 
+#define BUF_SIZE 1024
+
 typedef struct application_context {
     file_description_node *list_fd_head;
     int instance_count;

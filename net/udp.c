@@ -15,7 +15,6 @@
 #include "../file_controller/file_controller.h"
 
 #define UDP_PORT 8888
-#define BUF_SIZE 1024
 
 int udp_port = 0;
 
@@ -153,6 +152,17 @@ void start_udp_listener(application_context *app_context) {
 }
 
 void search_other_servers(udp_search_data *udp_sd) {
+    file_description *fd = find_file_description(udp_sd->app_context->list_fd_head, udp_sd->file_str);
+
+    if (fd != NULL) {
+        char *str = malloc(BUF_SIZE);
+        memset(str, 0, BUF_SIZE);
+        sprintf(str, "File '%s/%s/%d' exists here", fd->name, fd->hash, fd->size);
+        print_log(str, F_CYAN);
+        free(str);
+        return;
+    }
+
     int found = 0;
     for (int i = 0; i < udp_sd->app_context->instance_count; i++) {
         if ((UDP_PORT + i) != udp_port)
@@ -160,7 +170,8 @@ void search_other_servers(udp_search_data *udp_sd) {
     }
 
     if (!found) {
-        char *str = malloc(100 * sizeof(char));
+        char *str = malloc(BUF_SIZE);
+        memset(str, 0, BUF_SIZE);
         sprintf(str, "File '%s' not found", udp_sd->file_str);
         print_log(str, F_CYAN);
         free(str);
@@ -214,11 +225,9 @@ void check_server(application_context *app_context, char *file_description_str, 
     udp_answer *answer = (udp_answer *) buffer;
 
     if (answer->success_result) {
-        char *str = malloc(100 * sizeof(char));
+        char *str = malloc(BUF_SIZE);
+        memset(str, 0, BUF_SIZE);
         sprintf(str, "File found on UDP server with port %d", htons(foreign_address.sin_port));
-        print_log(str, F_GREEN);
-        memset(str, 0, 100);
-        sprintf(str, "Started TCP server with port %d", answer->port);
         print_log(str, F_GREEN);
         free(str);
 

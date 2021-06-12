@@ -52,6 +52,11 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
         return;
     }
 
+    char *str = malloc(BUF_SIZE);
+    memset(str, 0, BUF_SIZE);
+    sprintf(str, "Started TCP server with port %d", td->tcp_port);
+    print_log(str, F_GREEN);
+    free(str);
 
     len = sizeof(td->client_address);
 
@@ -121,6 +126,13 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
 //        printf("Connected to the server\n");
     }
 
+    char *str = malloc(BUF_SIZE);
+    memset(str, 0, BUF_SIZE);
+    sprintf(str, "Connected to the server with TCP port %d", tcp_client_thread_description->port);
+    print_log(str, F_GREEN);
+    free(str);
+
+    int file_index = 0;
 
     char *file_path = calloc(1, 1024);
 
@@ -129,6 +141,8 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
     strcat(file_path, fd->name);
 
     int file = open(file_path, O_CREAT | O_WRONLY, 0777);
+
+    print_download(fd->name, fd->size, &file_index);
 
     if (file >= 0) {
         push_fd_by_head(app_context->list_fd_head, fd);
@@ -140,8 +154,10 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
         tcp_server_file_answer file_answer;
 
         while (1) {
-            int current_file_size = calculate_file_size(file_path);
-            int current_percents = (int) ((((float) current_file_size) / fd->size) * 100);
+            int calc_file_size = calculate_file_size(file_path);
+            int current_percents = (int) ((((float) calc_file_size) / fd->size) * 100);
+
+            update_download_progress(current_size, fd->size, current_percents, file_index);
 
             if (current_size < fd->size) {
                 write(sockfd, &command, sizeof(command));
@@ -152,12 +168,17 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
             } else {
                 strncpy(command, "end", 3);
                 write(sockfd, &command, sizeof(command));
+                char *str = malloc(BUF_SIZE);
+                memset(str, 0, BUF_SIZE);
+                sprintf(str, "Downloading file '%s' finished", fd->name);
+                print_log(str, F_GREEN);
+                free(str);
                 return;
             }
 
         }
     } else {
-        perror("creating downloading file failed");
+        perror("creating file failed");
     }
 
 

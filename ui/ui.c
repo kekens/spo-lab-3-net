@@ -19,6 +19,7 @@ static struct termios stored_settings;
 
 string_count *sc;
 log_frame_description *log_desc;
+download_frame_description *df_desc;
 cmd_enter_description *cmd_desc;
 
 void set_keypress(void)
@@ -47,7 +48,8 @@ void reset_keypress(void)
 void start_ui(application_context *app_context) {
 
     sc = calloc(1, sizeof(string_count));
-    log_desc = calloc(1, sizeof(log_desc));
+    log_desc = calloc(1, sizeof(log_frame_description));
+    df_desc = calloc(1, sizeof(download_frame_description));
     cmd_desc = calloc(1, sizeof(cmd_desc));
 
     struct winsize w;
@@ -82,6 +84,11 @@ void start_ui(application_context *app_context) {
     print_horizontal_line("-", subFrameWidth, downloadingXStart, downloadingYStart + subFrameHeight + 1);
     print_horizontal_line("-", subFrameWidth, uploadingXStart, downloadingYStart + subFrameHeight + 1);
 
+    df_desc->dfStartX = downloadingXStart + 2;
+    df_desc->dfStartyY = downloadingYStart + 3;
+    df_desc->max_string = subFrameHeight - 4;
+    df_desc->dfWidth = subFrameWidth - 4;
+
     //Action/events log frame
     int logXStart = downloadingXStart;
     int logYStart;
@@ -98,8 +105,8 @@ void start_ui(application_context *app_context) {
     print_vertical_line("|", logFrameHeight , logXStart + logFrameWidth, logYStart + 2);
     print_horizontal_line("-", logFrameWidth, logXStart, logYStart + logFrameHeight + 1);
 
-    log_desc->logStartX = logXStart;
-    log_desc->logStartY = logYStart;
+    log_desc->logStartX = logXStart + 2;
+    log_desc->logStartY = logYStart + 3;
     log_desc->max_string = logFrameHeight - 4;
 
     //Command line frame
@@ -132,8 +139,10 @@ void start_ui(application_context *app_context) {
         cmd_res = process_command();
         if (strcmp(cmd_res.cmd, "show") == 0) {
             file_description *file_desc = search_file_description_by_name(app_context->list_fd_head, cmd_res.arg);
-            char *str = malloc(100 * sizeof(char));
-            char *fd_str = malloc(100 * sizeof(char));
+            char *str = malloc(BUF_SIZE);
+            char *fd_str = malloc(BUF_SIZE);
+            memset(str, 0, BUF_SIZE);
+            memset(fd_str, 0, BUF_SIZE);
             if (file_desc != NULL) {
                 strcpy(fd_str, "Found file description - ");
                 sprintf(str, "%s/%s/%d", file_desc->name, file_desc->hash, file_desc->size);
@@ -161,7 +170,8 @@ void start_ui(application_context *app_context) {
         } else if (strcmp(cmd_res.cmd, "exit") == 0) {
             app_context->exit_code = 1;
         } else if (strcmp(cmd_res.cmd, "") != 0) {
-                char *str = malloc(256 * sizeof(char));
+                char *str = malloc(BUF_SIZE);
+                memset(str, 0, BUF_SIZE);
                 sprintf(str, "Incorrect command '%s'. Try again", cmd_res.cmd);
                 print_log(str, DIM);
                 free(str);
@@ -223,6 +233,47 @@ command_result process_command() {
     return cmd_res;
 }
 
+void print_download(char *filename, int size, int *file_index   ) {
+    if (sc->download_count + 1> df_desc->max_string) {
+        sc->download_count = 0;
+        clear_downloads();
+    }
+
+    save_cursor();
+    gotoxy(df_desc->dfStartX, df_desc->dfStartyY + sc->download_count);
+    char *str = malloc(100 * sizeof(char));
+    memset(str, ' ', 100 * sizeof(char));
+    strcpy(str, filename);
+    for (int i = 0; i < df_desc->dfWidth * 0.4; i++) {
+        printf("%c", str[i]);
+    }
+    for (int i = 0; i < df_desc->dfWidth * 0.4; i++) {
+        printf(" ");
+    }
+    printf("0M/%dM | 0%%/100%%", (int) size / 1024 / 1024);
+    free(str);
+    *file_index = sc->download_count;
+    sc->download_count++;
+    restore_cursor();
+    fflush(stdout);
+}
+
+void update_download_progress(int size, int file_size, int percents, int file_index) {
+    int offset = (int) df_desc->dfWidth * 0.8;
+    char *str = malloc(BUF_SIZE);
+    memset(str, 0, BUF_SIZE);
+    sprintf(str, "|%d|%d|%d", size, percents, file_index);
+
+    save_cursor();
+    gotoxy(df_desc->dfStartX + offset, df_desc->dfStartyY + file_index);
+    clear_symbols(df_desc->dfWidth - offset);
+    printf("%dM/%dM | %d%%/100%%", (int) size / 1024 / 1024, (int) file_size / 1024 / 1024, percents);
+    restore_cursor();
+    free(str);
+
+    fflush(stdout);
+}
+
 void print_log(char *log_str, int format) {
     if (sc->log_count + 1> log_desc->max_string) {
         sc->log_count = 0;
@@ -230,7 +281,7 @@ void print_log(char *log_str, int format) {
     }
 
     save_cursor();
-    gotoxy(log_desc->logStartX + 2, log_desc->logStartY + 3 + sc->log_count);
+    gotoxy(log_desc->logStartX, log_desc->logStartY + sc->log_count);
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     set_display_atrib(format);
@@ -243,10 +294,18 @@ void print_log(char *log_str, int format) {
 
 void clear_log() {
     for (int i = 0; i < log_desc->max_string + 1; i++) {
-        gotoxy(log_desc->logStartX + 2, log_desc->logStartY + 3 + i);
+        gotoxy(log_desc->logStartX, log_desc->logStartY + i);
         clear_symbols(150);
     }
 }
+
+void clear_downloads() {
+    for (int i = 0; i < df_desc->max_string + 1; i++) {
+        gotoxy(df_desc->dfStartX, df_desc->dfStartyY + i);
+        clear_symbols(df_desc->dfWidth);
+    }
+}
+
 
 void print_horizontal_line(char symbol[1], int count, int startX, int y) {
     gotoxy(startX, y);
