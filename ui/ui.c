@@ -140,7 +140,10 @@ void start_ui(application_context *app_context) {
     get_pos(&cmd_desc->cmdEnterStartY, &cmd_desc->cmdEnterStartX);
     command_result cmd_res = {0};
 
+    print_log(app_context->root_path, BRIGHT);
+
     app_context->ui_ready = 1;
+
 
     while (!app_context->exit_code) {
         cmd_res = process_command();
@@ -281,6 +284,8 @@ void print_upload(char *filename, int *file_index) {
     sc->upload_count++;
     fflush(stdout);
 }
+
+//TODO mutex update progress
 
 void update_download_progress(int size, int file_size, int percents, int file_index) {
     int offset = (int) df_desc->frameWidth * 0.8;

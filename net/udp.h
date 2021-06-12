@@ -18,9 +18,16 @@ typedef struct udp_answer {
     file_description_send file_desc_send;
 } udp_answer;
 
+typedef struct checking_servers_data {
+    int found_count;
+    char *string_ports;
+} checking_servers_data;
+
 void start_udp_listener(application_context *app_context);
 
-void check_server(application_context *app_context, char *search_file_description, int port, int *found);
+void download_from_server(application_context *app_context, char *search_file_description, int offset, int download_size, int port);
+
+void check_server(int port, char *search_file_string, checking_servers_data *checking_servers_data);
 
 void search_other_servers(udp_search_data *udp_sd);
 

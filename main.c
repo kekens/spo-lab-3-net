@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
         app_context->exit_code = 0;
         app_context->root_path = argv[1];
         scan_all_directories(list_fd_head, argv[1]);
-        print_list(list_fd_head);
+
 
         pthread_t *udp_thread = malloc(sizeof(pthread_t));
         pthread_create(udp_thread, NULL, (void *) start_udp_listener, app_context);

@@ -75,18 +75,21 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
     strncpy(cmd, "xxx", 3);
     tcp_server_file_answer file_answer;
     tcp_client_progress_data progress_data;
+    tcp_client_download_data download_data;
 
     print_upload(fd->name, &upload_file_index);
 
     while (strncmp(cmd, "end", 3) != 0) {
-        read(connfd, &cmd, sizeof(cmd));
+        read(connfd, &download_data, sizeof(tcp_client_download_data));
+        strncpy(cmd, download_data.cmd, 3);
         if (strncmp(cmd, "dwn", sizeof(cmd)) == 0) {
             int size = 4096;
-            if (size*offset + 4096 > fd->size) {
-                size = fd->size - size * offset;
+            if (size*offset + 4096 > download_data.file_part_size) {
+                size = download_data.file_part_size - size * offset;
             }
+
             file_answer.file_part_len = size;
-            pread(file, file_answer.file_part, size, 4096 * offset);
+            pread(file, file_answer.file_part, size, download_data.file_part_offset + 4096 * offset);
             offset++;
             write(connfd, &file_answer, sizeof(file_answer));
 
@@ -151,35 +154,48 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
 
     int file = open(file_path, O_CREAT | O_WRONLY, 0777);
 
-    print_download(fd->name, &download_file_index);
+    if (tcp_client_thread_description->file_offset == 0) {
+        print_download(fd->name, &download_file_index);
+    } else {
+        char *str = malloc(BUF_SIZE);
+        memset(str, 0, BUF_SIZE);
+        sprintf(str, "%s %d %d(additional)", fd->name, tcp_client_thread_description->download_size, tcp_client_thread_description->file_offset);
+        print_download(str, &download_file_index);
+        free(str);
+    }
 
     if (file >= 0) {
-        push_fd_by_head(app_context->list_fd_head, fd);
+        if (tcp_client_thread_description->file_offset == 0) {
+            push_fd_by_head(app_context->list_fd_head, fd);
+        }
 
-        char command[3];
-        strncpy(command, "dwn", 3);
         int offset = 0;
         int current_size = 0;
         tcp_server_file_answer file_answer;
         tcp_client_progress_data progress_data;
+        tcp_client_download_data download_data;
+        int file_part_size = tcp_client_thread_description->download_size;
 
+        strncpy(download_data.cmd, "dwn", 3);
 
         while (1) {
-            int calc_file_size = calculate_file_size(file_path);
-            int current_percents = (int) ((((float) calc_file_size) / fd->size) * 100);
+            int current_percents = (int) ((((float) current_size) / file_part_size) * 100);
 
-            update_download_progress(current_size, fd->size, current_percents, download_file_index);
+            update_download_progress(current_size, file_part_size, current_percents, download_file_index);
 
-            if (current_size < fd->size) {
-                strncpy(command, "dwn", 3);
-                write(sockfd, &command, sizeof(command));
+            if (current_size < file_part_size) {
+                strncpy(download_data.cmd, "dwn", 3);
+                download_data.file_part_offset = tcp_client_thread_description->file_offset;
+                download_data.file_part_size = file_part_size;
+
+                write(sockfd, &download_data, sizeof(tcp_client_download_data));
                 read(sockfd, &file_answer, sizeof(file_answer));
-                pwrite(file, &file_answer.file_part, file_answer.file_part_len, offset * 4096);
-                current_size += 4096;
+                pwrite(file, &file_answer.file_part, file_answer.file_part_len, tcp_client_thread_description->file_offset + offset * 4096);
+                current_size += file_answer.file_part_len;
                 offset++;
             } else {
-                strncpy(command, "end", 3);
-                write(sockfd, &command, sizeof(command));
+                strncpy(download_data.cmd, "end", 3);
+                write(sockfd, &download_data, sizeof(tcp_client_download_data));
                 char *str = malloc(BUF_SIZE);
                 memset(str, 0, BUF_SIZE);
 
@@ -191,11 +207,11 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
 
             progress_data.current_size = current_size;
             progress_data.current_percents = current_percents;
-            write(sockfd, &progress_data, sizeof(progress_data));
+            write(sockfd, &progress_data, sizeof(tcp_client_progress_data));
 
         }
     } else {
-        perror("creating file failed");
+//        perror("creating file failed");
     }
 
 

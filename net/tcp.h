@@ -27,6 +27,8 @@ typedef struct tcp_client_thread_description {
     file_description_send file_desc_send;
     int port;
     int address;
+    int file_offset;
+    int download_size;
 } tcp_client_thread_description;
 
 typedef struct tcp_server_file_answer {
@@ -38,6 +40,12 @@ typedef struct tcp_client_progress_data {
     int current_size;
     int current_percents;
 } tcp_client_progress_data;
+
+typedef struct tcp_client_download_data {
+    char cmd[3];
+    int file_part_offset;
+    int file_part_size;
+} tcp_client_download_data;
 
 void create_tcp_socket(tcp_description *td);
 
