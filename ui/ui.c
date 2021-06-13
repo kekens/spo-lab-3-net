@@ -22,6 +22,7 @@ log_frame_description *log_desc;
 progress_frame_description *df_desc;
 progress_frame_description *uf_desc;
 cmd_enter_description *cmd_desc;
+pthread_mutex_t lock;
 
 void set_keypress(void)
 {
@@ -53,6 +54,8 @@ void start_ui(application_context *app_context) {
     df_desc = calloc(1, sizeof(progress_frame_description));
     uf_desc = calloc(1, sizeof(progress_frame_description));
     cmd_desc = calloc(1, sizeof(cmd_desc));
+
+    pthread_mutex_init(&lock, NULL);
 
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
@@ -146,6 +149,7 @@ void start_ui(application_context *app_context) {
 
 
     while (!app_context->exit_code) {
+        resetcolor();
         cmd_res = process_command();
         if (strcmp(cmd_res.cmd, "show") == 0) {
             file_description *file_desc = search_file_description_by_name(app_context->list_fd_head, cmd_res.arg);
@@ -157,12 +161,12 @@ void start_ui(application_context *app_context) {
                 strcpy(fd_str, "Found file description - ");
                 sprintf(str, "%s/%s/%d", file_desc->name, file_desc->hash, file_desc->size);
                 strcat(fd_str, str);
-                print_log(fd_str, BRIGHT);
+                print_log(fd_str, F_WHITE);
             } else if (strcmp(cmd_res.arg, "") == 0){
-                print_log("Specify the filename", BRIGHT);
+                print_log("Specify the filename", F_WHITE);
             } else {
                 sprintf(str, "File '%s' not found", cmd_res.arg);
-                print_log(str, BRIGHT);
+                print_log(str, F_WHITE);
             }
             free(str);
             free(fd_str);
@@ -293,11 +297,13 @@ void update_download_progress(int size, int file_size, int percents, int file_in
     memset(str, 0, BUF_SIZE);
     sprintf(str, "|%d|%d|%d", size, percents, file_index);
 
+    pthread_mutex_lock(&lock);
     save_cursor();
     gotoxy(df_desc->frameStartX + offset, df_desc->frameStartyY + file_index);
     clear_symbols(df_desc->frameWidth - offset);
     printf("%dM/%dM | %d%%/100%%", (int) size / 1024 / 1024, (int) file_size / 1024 / 1024, percents);
     restore_cursor();
+    pthread_mutex_unlock(&lock);
     free(str);
 
     fflush(stdout);
@@ -325,15 +331,22 @@ void print_log(char *log_str, int format) {
         clear_log();
     }
 
-    save_cursor();
-    gotoxy(log_desc->logStartX, log_desc->logStartY + sc->log_count);
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     set_display_atrib(format);
-    printf("[%02d:%02d:%02d] ", tm.tm_hour, tm.tm_min, tm.tm_sec);
-    printf("%s", log_str);
-    sc->log_count++;
+
+    if (format == F_BLUE || format == DIM) {
+        set_display_atrib(BRIGHT);
+    }
+
+    pthread_mutex_lock(&lock);
+    save_cursor();
+    gotoxy(log_desc->logStartX, log_desc->logStartY + sc->log_count);
+    printf("[%02d:%02d:%02d] %s", tm.tm_hour, tm.tm_min, tm.tm_sec, log_str);
     restore_cursor();
+    resetcolor();
+    pthread_mutex_unlock(&lock);
+    sc->log_count++;
     fflush(stdout);
 }
 

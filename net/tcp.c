@@ -94,9 +94,9 @@ void start_tcp_server(tcp_server_thread_description *tcp_server_thread_descripti
             write(connfd, &file_answer, sizeof(file_answer));
 
             read(connfd, &progress_data, sizeof(tcp_client_progress_data));
-            update_upload_progress(progress_data.current_size, fd->size, progress_data.current_percents, upload_file_index);
+            update_upload_progress(progress_data.current_size, download_data.file_part_size, progress_data.current_percents, upload_file_index);
         } else if (strncmp(cmd, "end", 3) == 0) {
-            update_upload_progress(fd->size, fd->size, 100, upload_file_index);
+            update_upload_progress(download_data.file_part_size, download_data.file_part_size, 100, upload_file_index);
         }
     }
 
@@ -159,7 +159,7 @@ void start_tcp_client(tcp_client_thread_description *tcp_client_thread_descripti
     } else {
         char *str = malloc(BUF_SIZE);
         memset(str, 0, BUF_SIZE);
-        sprintf(str, "%s %d %d(additional)", fd->name, tcp_client_thread_description->download_size, tcp_client_thread_description->file_offset);
+        sprintf(str, "-- %s", fd->name);
         print_download(str, &download_file_index);
         free(str);
     }
