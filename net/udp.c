@@ -18,7 +18,7 @@
 
 int udp_port = 0;
 
-void inform_new_instance(int count, int port) {
+void inform_instance_count(int count, int port) {
     int sockfd;
     struct sockaddr_in server_address;
 
@@ -99,7 +99,7 @@ void start_udp_listener(application_context *app_context) {
 
     if (udp_port > UDP_PORT) {
         for (int i = 0; i < udp_port - UDP_PORT; i++) {
-            inform_new_instance(udp_port + 1 - UDP_PORT, i + UDP_PORT);
+            inform_instance_count(udp_port + 1 - UDP_PORT, i + UDP_PORT);
         }
         app_context->instance_count = udp_port - UDP_PORT + 1;
     } else {
@@ -170,6 +170,7 @@ void start_udp_listener(application_context *app_context) {
                 sendto(sockfd, &udp_answ, sizeof(udp_answer), MSG_CONFIRM,
                        (const struct sockaddr *) &foreign_address, len);
             } else {
+
             }
         }
     }

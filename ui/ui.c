@@ -147,6 +147,7 @@ void start_ui(application_context *app_context) {
 
     app_context->ui_ready = 1;
 
+    set_scroll_area(0, 0);
 
     while (!app_context->exit_code) {
         resetcolor();
@@ -288,8 +289,6 @@ void print_upload(char *filename, int *file_index) {
     sc->upload_count++;
     fflush(stdout);
 }
-
-//TODO mutex update progress
 
 void update_download_progress(int size, int file_size, int percents, int file_index) {
     int offset = (int) df_desc->frameWidth * 0.8;

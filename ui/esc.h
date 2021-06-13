@@ -52,5 +52,6 @@
 #define clear_symbols(count) printf(ESC "[%dX", count);
 #define save_cursor() printf(ESC "[s");
 #define restore_cursor() printf(ESC "[u");
+#define set_scroll_area(top, bottom) printf(ESC "[%d;%dr", top, bottom);
 
 #endif //LR3_NET_ESC_H

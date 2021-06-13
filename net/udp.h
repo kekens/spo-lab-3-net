@@ -31,4 +31,6 @@ void check_server(int port, char *search_file_string, checking_servers_data *che
 
 void search_other_servers(udp_search_data *udp_sd);
 
+void inform_instance_count(int count, int port);
+
 #endif //LR3_NET_UDP_H
