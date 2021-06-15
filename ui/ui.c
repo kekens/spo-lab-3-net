@@ -147,8 +147,6 @@ void start_ui(application_context *app_context) {
 
     app_context->ui_ready = 1;
 
-    set_scroll_area(0, 0);
-
     while (!app_context->exit_code) {
         resetcolor();
         cmd_res = process_command();
